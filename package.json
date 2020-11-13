@@ -2,7 +2,15 @@
   "name": "ntdl",
   "version": "0.0.0",
   "description": "node to-do list",
-  "main": "index.js",
+  "bin": {
+    "ntdl": "index.js"
+  },
+  "engines": {
+    "node": ">=10"
+  },
+  "files": [
+    "index.js"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

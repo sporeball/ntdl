@@ -1,3 +1,12 @@
+#!/usr/bin/env node
+
+/*
+  index.js
+  ntdl core
+  copyright (c) 2020 sporeball
+  MIT license
+*/
+
 // dependencies
 var term = require("terminal-kit").terminal;
 const chalk = require("chalk");
