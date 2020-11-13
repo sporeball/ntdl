@@ -24,6 +24,8 @@
   },
   "homepage": "https://github.com/sporeball/ntdl#readme",
   "dependencies": {
+    "chalk": "^4.1.0",
+    "conf": "^7.1.2",
     "terminal-kit": "^1.44.0"
   }
 }
