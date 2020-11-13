@@ -1,0 +1,29 @@
+{
+  "name": "ntdl",
+  "version": "0.0.0",
+  "description": "node to-do list",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sporeball/ntdl.git"
+  },
+  "keywords": [
+    "cli-app",
+    "cli",
+    "app",
+    "todo",
+    "list"
+  ],
+  "author": "sporeball",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sporeball/ntdl/issues"
+  },
+  "homepage": "https://github.com/sporeball/ntdl#readme",
+  "dependencies": {
+    "terminal-kit": "^1.44.0"
+  }
+}
