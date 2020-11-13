@@ -13,27 +13,59 @@ const commands = {
     output("a ");
 
     term.inputField({ style: term.green }, function(error, input) {
-      output("added task '" + chalk.green(input) + "'");
-      tasks.push(input);
+      tasks.push([input, false]);
       config.set("tasks", tasks);
       writeList();
       statusline();
+      output("added task '" + chalk.green(input) + "'");
       busy = false;
     });
   },
-  // delete all tasks
+  // delete one task
+  "x": () => {
+    busy = true;
+
+    output("x");
+
+    let t = [];
+    for (i in tasks) t.push(tasks[i][0]);
+
+    term.singleColumnMenu(t, {
+      y: 2,
+      style: term,
+      selectedStyle: term,
+      submittedStyle: term,
+      leftPadding: " - ",
+      selectedLeftPadding: " > "
+    }, function(error, response) {
+      tasks[response.selectedIndex][1] = true;
+      config.set("tasks", tasks);
+      writeList();
+      statusline();
+      output("completed '" + chalk.green(response.selectedText) + "'");
+      busy = false;
+    });
+  },
+  // delete completed tasks
   "X": async () => {
     let i = 0;
+    let deleted = 0;
+    
     while (i < tasks.length) {
       term.moveTo(2, i + 2);
-      term.eraseLine();
+      if (tasks[i][1] == true) {
+        term.eraseLine();
+        deleted++;
+      }
       await sleep(10);
       i++;
     }
-    output(`deleted ${tasks.length} task${tasks.length != 1 ? "s" : ""}`);
-    tasks = [];
+    tasks = tasks.filter(task => task[1] !== true);
+    config.set("tasks", tasks);
+    term.eraseArea(1, 2, term.width, term.height);
+    writeList();
     statusline();
-    config.delete("tasks");
+    output(`deleted ${deleted} task${deleted != 1 ? "s" : ""}`);
   },
   // terminate
   "CTRL_C": () => {
@@ -55,7 +87,7 @@ writeList = async () => {
   while (i < tasks.length) {
     term.moveTo(2, i + 2);
     term.eraseLine();
-    term("- %s", tasks[i]);
+    term("- %s", tasks[i][0]);
     await sleep(10);
     i++;
   }
