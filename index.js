@@ -156,6 +156,10 @@ init = () => {
   term.fullscreen(true);
 
   term.bold.cyan("ntdl\n");
+  completed = tasks.filter(i => i[1] == true).length;
+  if (completed == tasks.length && completed != 0) {
+    output(chalk.green("all tasks completed!"));
+  }
   writeList();
   statusline();
   term.moveTo(1, term.height);
