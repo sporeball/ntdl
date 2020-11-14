@@ -15,6 +15,13 @@ const symbols = require("log-symbols");
 const Conf = require("conf");
 const config = new Conf();
 
+const updateNotifier = require("update-notifier");
+const pkg = require("./package.json");
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: config.get("interval") || 0
+});
+
 const commands = {
   // add task
   "a": () => {
@@ -154,18 +161,34 @@ sleep = ms => {
 
 init = () => {
   term.fullscreen(true);
-
   term.bold.cyan("ntdl\n");
+
   completed = tasks.filter(i => i[1] == true).length;
   if (completed == tasks.length && completed != 0) {
     output(chalk.green("all tasks completed!"));
   }
   writeList();
   statusline();
+
+  if (notifier.update) {
+    term.moveTo(term.width - `ntdl v${notifier.update.latest} available!`.length, 1);
+    term(chalk.cyan("ntdl ") + chalk.green(`v${notifier.update.latest}`) + chalk.cyan(" available!"));
+    term.moveTo(term.width - 23, 2);
+    term.gray("press any key to remove");
+  }
+
   term.moveTo(1, term.height);
   term.grabInput({ mouse: "button" });
 
   term.on("key", function(name, matches, data) {
+    if (notifier.update) {
+      term.eraseArea(term.width - 23, 1, 23, 2);
+      term.moveTo(1, 1);
+      term.bold.cyan("ntdl\n");
+      term.moveTo(1, term.height);
+      notifier.update = undefined;
+      config.set("interval", 86400000);
+    }
     if (!busy && name in commands) {
       commands[name]();
     }
