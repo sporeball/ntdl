@@ -1,6 +1,6 @@
 {
   "name": "ntdl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "node to-do list",
   "bin": {
     "ntdl": "index.js"
