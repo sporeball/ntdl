@@ -22,6 +22,17 @@ const notifier = updateNotifier({
   updateCheckInterval: config.get("interval") || 0
 });
 
+const meow = require("meow");
+const cli = meow(`
+  usage
+    $ ntdl
+
+  commands
+    a   add task
+    x   complete task
+    X   clear completed tasks
+`, { description: false });
+
 const commands = {
   // add task
   "a": () => {

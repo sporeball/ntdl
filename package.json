@@ -35,6 +35,7 @@
     "chalk": "^4.1.0",
     "conf": "^7.1.2",
     "log-symbols": "^4.0.0",
+    "meow": "^8.0.0",
     "terminal-kit": "^1.44.0",
     "update-notifier": "^5.0.1"
   }
