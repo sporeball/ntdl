@@ -49,6 +49,11 @@ const commands = {
     output("a ");
 
     term.inputField({ style: term.green }, function(error, input) {
+      if (input == "") {
+        output(chalk.red("task name cannot be empty"));
+        busy = false;
+        return;
+      }
       for (i in tasks) {
         if (tasks[i][0] == input) {
           output(chalk.red("task already exists with this name"));
