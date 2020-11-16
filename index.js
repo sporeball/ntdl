@@ -56,9 +56,11 @@ const commands = {
           return;
         }
       }
+      term.moveTo(2, tasks.length + 2);
+      if (tasks.length == 0) term.eraseLine();
+      term("- %s ", input);
       tasks.push([input, false]);
       setTasks();
-      writeList();
       statusline();
       output("added task '" + chalk.green(input) + "'");
       busy = false;
@@ -96,7 +98,6 @@ const commands = {
       }
       completed++;
       setTasks();
-      term.eraseArea(1, 2, term.width, term.height - 3);
       writeList();
       statusline();
       if (completed == tasks.length) {
@@ -108,21 +109,12 @@ const commands = {
     });
   },
   // remove completed tasks
-  "X": async () => {
-    let i = 0;
-    let removed = 0;
+  "X": () => {
+    let c = tasks.filter(task => task[1] !== true);
+    let removed = tasks.length - c.length;
 
-    while (i < tasks.length) {
-      term.moveTo(2, i + 2);
-      if (tasks[i][1] == true) {
-        term.eraseLine();
-        removed++;
-      }
-      await sleep(10);
-      i++;
-    }
-    tasks = tasks.filter(task => task[1] !== true);
-    completed -= removed;
+    tasks = c;
+    completed = 0;
     setTasks();
     term.eraseArea(1, 2, term.width, term.height);
     writeList();
@@ -146,23 +138,19 @@ var completed = 0;
 var busy = false; // are we in the middle of a command?
 
 // write current tasks to the terminal
-writeList = async () => {
+writeList = () => {
   if (tasks.length == 0) {
     term.moveTo(2, 2);
     term.gray("no tasks yet...");
     return;
   }
-  let i = 0;
-  while (i < tasks.length) {
+  for (let i = 0; i < tasks.length; i++) {
     term.moveTo(2, i + 2);
-    term.eraseLine();
     if (tasks[i][1] == true) {
       term(chalk.gray(`- ${tasks[i][0]} `) + symbols.success);
     } else {
       term("- %s ", tasks[i][0]);
     }
-    await sleep(10);
-    i++;
   }
 }
 
