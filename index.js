@@ -22,16 +22,24 @@ const notifier = updateNotifier({
   updateCheckInterval: config.get("interval") || 0
 });
 
-const meow = require("meow");
-const cli = meow(`
-  usage
-    $ ntdl
+// arguments
+var args = process.argv.slice(2);
+if (args.includes("--help")) {
+  console.log(`
+    usage
+      $ ntdl
 
-  commands
-    a   add task
-    x   complete task
-    X   clear completed tasks
-`, { description: false });
+    commands
+      a     add task
+      x     complete task
+      X     clear completed tasks
+
+    flags
+     -d     dev mode
+    --help  show this screen`);
+  process.exit(0);
+}
+const DEV = args.includes("-d");
 
 const commands = {
   // add task
@@ -49,7 +57,7 @@ const commands = {
         }
       }
       tasks.push([input, false]);
-      config.set("tasks", tasks);
+      setTasks();
       writeList();
       statusline();
       output("added task '" + chalk.green(input) + "'");
@@ -87,7 +95,7 @@ const commands = {
         }
       }
       completed++;
-      config.set("tasks", tasks);
+      setTasks();
       term.eraseArea(1, 2, term.width, term.height - 3);
       writeList();
       statusline();
@@ -115,7 +123,7 @@ const commands = {
     }
     tasks = tasks.filter(task => task[1] !== true);
     completed -= removed;
-    config.set("tasks", tasks);
+    setTasks();
     term.eraseArea(1, 2, term.width, term.height);
     writeList();
     statusline();
@@ -131,7 +139,7 @@ const commands = {
   }
 };
 
-var tasks = config.get("tasks") || [];
+var tasks = (DEV) ? config.get("devTasks") || [] : config.get("tasks") || [];
 
 var completed = 0;
 
@@ -169,6 +177,10 @@ output = str => {
   term.moveTo(1, term.height);
   term.eraseLine();
   term(str);
+}
+
+setTasks = () => {
+  (DEV) ? config.set("devTasks", tasks) : config.set("tasks", tasks);
 }
 
 sleep = ms => {

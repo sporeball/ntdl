@@ -19,6 +19,9 @@ just run `ntdl`.
 
 `ntdl --help` will also show this list.
 
+#### flags
+- `-d` - dev mode. tasks created here are stored separately from those created without the flag; useful if you're like me and want to develop ntdl and use it, too.
+
 ### donate
 you can support the development of this project and others via Patreon:
 
