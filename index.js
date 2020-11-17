@@ -29,6 +29,8 @@ if (args.includes("--help")) {
     usage
       $ ntdl
 
+    use arrow keys to move
+
     commands
       a     add task
       x     complete task
@@ -43,10 +45,15 @@ const DEV = args.includes("-d");
 
 const commands = {
   // add task
-  "a": () => {
+  "a": async () => {
     busy = true;
 
-    output("a ");
+    if (cy) {
+      term.moveTo(2, cy);
+      (tasks[cy - 2][1] == true) ? term.gray("-") : term("-");
+    }
+
+    output("> ");
     term.moveTo(3, term.height);
 
     term.inputField({ style: term.green }, function(error, input) {
@@ -69,35 +76,31 @@ const commands = {
       setTasks();
       statusline();
       output("added task '" + chalk.green(input) + "'");
-      if (tasks.length == 1) {
-        cy = 2;
-        term.moveTo(2, cy);
-        term(">");
-      }
+      if (tasks.length == 1) cy = 2;
+      cursor();
       term.moveTo(term.width, term.height);
       busy = false;
     });
   },
   // complete task
-  "x": () => {
-    if (cy === null) return;
+  "x": async () => {
+    if (!cy) return;
     if (tasks[cy - 2][1] == true) return;
     tasks[cy - 2][1] = true;
     completed++;
     setTasks();
-    term.moveTo(2, cy);
-    term(">" + chalk.gray(` ${tasks[cy - 2][0]} `) + symbols.success);
+    term.moveTo(3, cy);
+    term(chalk.gray(` ${tasks[cy - 2][0]} `) + symbols.success);
     statusline();
     if (completed == tasks.length) {
       output(chalk.green("all tasks completed!"));
     } else {
       output("completed '" + chalk.green(tasks[cy - 2][0]) + "'");
     }
-    term.moveTo(term.width, term.height);
   },
   // remove completed tasks
-  "X": () => {
-    let c = tasks.filter(task => task[1] !== true);
+  "X": async () => {
+    let c = tasks.filter(task => task[1] == false);
     let removed = tasks.length - c.length;
 
     tasks = c;
@@ -109,34 +112,16 @@ const commands = {
     output(`removed ${removed} task${removed != 1 ? "s" : ""}`);
     if (tasks.length != 0) {
       cy = 2;
-      term.moveTo(2, cy);
-      term(">");
+      cursor();
     } else {
-      cy = null;
-    }
-    term.moveTo(term.width, term.height);
-  },
-  "DOWN": () => {
-    if (cy === null || cy == tasks.length + 1) return;
-    cy++;
-    if (cy - 1 < tasks.length + 1) {
-      term.moveTo(2, cy - 1);
-      (tasks[cy - 3][1] == true) ? term.gray("-") : term("-");
-      term.moveTo(2, cy);
-      term(">");
-      term.moveTo(term.width, term.height);
+      cy = undefined;
     }
   },
-  "UP": () => {
-    if (cy === null || cy == 2) return;
-    cy--;
-    if (cy + 1 > 2) {
-      term.moveTo(2, cy + 1);
-      (tasks[cy - 1][1] == true) ? term.gray("-") : term("-");
-      term.moveTo(2, cy);
-      term(">");
-      term.moveTo(term.width, term.height);
-    }
+  "DOWN": async () => {
+    if (cy && cy != tasks.length + 1) moveCursor(1);
+  },
+  "UP": async () => {
+    if (cy && cy != 2) moveCursor(-1);
   },
   // terminate
   "CTRL_C": () => {
@@ -152,11 +137,23 @@ var tasks = (DEV) ? config.get("devTasks") || [] : config.get("tasks") || [];
 
 var completed = 0;
 
-var cy = (tasks.length != 0) ? 2 : null; // cursor y-position
+var cy; // cursor y-position
 
 var busy = false; // are we in the middle of a command?
 
-// write current tasks to the terminal
+moveCursor = dir => {
+  cy += dir;
+  term.moveTo(2, cy - dir);
+  (tasks[cy - 2 - dir][1] == true) ? term.gray("-") : term("-");
+  cursor();
+}
+
+cursor = () => {
+  term.moveTo(2, cy);
+  term(">");
+}
+
+// write full list of tasks
 writeList = () => {
   if (tasks.length == 0) {
     term.moveTo(2, 2);
@@ -202,9 +199,9 @@ init = () => {
   writeList();
   statusline();
 
-  if (cy !== null) {
-    term.moveTo(2, cy);
-    term(">");
+  if (tasks.length != 0) {
+    cy = 2;
+    cursor();
   }
 
   if (notifier.update) {
@@ -215,19 +212,20 @@ init = () => {
   }
 
   term.moveTo(term.width, term.height);
-  term.grabInput({ mouse: "button" });
+  term.grabInput();
 
-  term.on("key", function(name, matches, data) {
+  term.on("key", async (name, matches, data) => {
     if (notifier.update) {
       term.eraseArea(term.width - 23, 1, 23, 2);
       term.moveTo(1, 1);
       term.bold.cyan("ntdl\n");
-      term.moveTo(1, term.height);
+      term.moveTo(term.width, term.height);
       notifier.update = undefined;
       config.set("interval", 86400000);
     }
     if (!busy && name in commands) {
-      commands[name]();
+      await commands[name]();
+      (name != "a") ? term.moveTo(term.width, term.height) : {};
     }
   });
 }
