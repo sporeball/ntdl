@@ -47,6 +47,7 @@ const commands = {
     busy = true;
 
     output("a ");
+    term.moveTo(3, term.height);
 
     term.inputField({ style: term.green }, function(error, input) {
       if (input == "") {
@@ -68,50 +69,31 @@ const commands = {
       setTasks();
       statusline();
       output("added task '" + chalk.green(input) + "'");
+      if (tasks.length == 1) {
+        cy = 2;
+        term.moveTo(2, cy);
+        term(">");
+      }
+      term.moveTo(term.width, term.height);
       busy = false;
     });
   },
   // complete task
   "x": () => {
-    let t = [];
-    for (i in tasks) {
-      if (tasks[i][1] == false) {
-        t.push(tasks[i][0]);
-      }
+    if (cy === null) return;
+    if (tasks[cy - 2][1] == true) return;
+    tasks[cy - 2][1] = true;
+    completed++;
+    setTasks();
+    term.moveTo(2, cy);
+    term(">" + chalk.gray(` ${tasks[cy - 2][0]} `) + symbols.success);
+    statusline();
+    if (completed == tasks.length) {
+      output(chalk.green("all tasks completed!"));
+    } else {
+      output("completed '" + chalk.green(tasks[cy - 2][0]) + "'");
     }
-    if (t.length == 0) return;
-
-    busy = true;
-
-    output("x");
-
-    term.eraseArea(1, 2, term.width, term.height - 3);
-
-    term.singleColumnMenu(t, {
-      y: 2,
-      style: term.gray,
-      selectedStyle: term,
-      submittedStyle: term,
-      leftPadding: " - ",
-      selectedLeftPadding: " > "
-    }, function(error, response) {
-      for (j in tasks) {
-        if (tasks[j][0] == response.selectedText) {
-          tasks[j][1] = true;
-          break;
-        }
-      }
-      completed++;
-      setTasks();
-      writeList();
-      statusline();
-      if (completed == tasks.length) {
-        output(chalk.green("all tasks completed!"));
-      } else {
-        output("completed '" + chalk.green(response.selectedText) + "'");
-      }
-      busy = false;
-    });
+    term.moveTo(term.width, term.height);
   },
   // remove completed tasks
   "X": () => {
@@ -125,6 +107,36 @@ const commands = {
     writeList();
     statusline();
     output(`removed ${removed} task${removed != 1 ? "s" : ""}`);
+    if (tasks.length != 0) {
+      cy = 2;
+      term.moveTo(2, cy);
+      term(">");
+    } else {
+      cy = null;
+    }
+    term.moveTo(term.width, term.height);
+  },
+  "DOWN": () => {
+    if (cy === null || cy == tasks.length + 1) return;
+    cy++;
+    if (cy - 1 < tasks.length + 1) {
+      term.moveTo(2, cy - 1);
+      (tasks[cy - 3][1] == true) ? term.gray("-") : term("-");
+      term.moveTo(2, cy);
+      term(">");
+      term.moveTo(term.width, term.height);
+    }
+  },
+  "UP": () => {
+    if (cy === null || cy == 2) return;
+    cy--;
+    if (cy + 1 > 2) {
+      term.moveTo(2, cy + 1);
+      (tasks[cy - 1][1] == true) ? term.gray("-") : term("-");
+      term.moveTo(2, cy);
+      term(">");
+      term.moveTo(term.width, term.height);
+    }
   },
   // terminate
   "CTRL_C": () => {
@@ -139,6 +151,8 @@ const commands = {
 var tasks = (DEV) ? config.get("devTasks") || [] : config.get("tasks") || [];
 
 var completed = 0;
+
+var cy = (tasks.length != 0) ? 2 : null; // cursor y-position
 
 var busy = false; // are we in the middle of a command?
 
@@ -170,16 +184,11 @@ output = str => {
   term.moveTo(1, term.height);
   term.eraseLine();
   term(str);
+  term.moveTo(term.width, term.height);
 }
 
 setTasks = () => {
   (DEV) ? config.set("devTasks", tasks) : config.set("tasks", tasks);
-}
-
-sleep = ms => {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
 }
 
 init = () => {
@@ -193,6 +202,11 @@ init = () => {
   writeList();
   statusline();
 
+  if (cy !== null) {
+    term.moveTo(2, cy);
+    term(">");
+  }
+
   if (notifier.update) {
     term.moveTo(term.width - `ntdl v${notifier.update.latest} available!`.length, 1);
     term(chalk.cyan("ntdl ") + chalk.green(`v${notifier.update.latest}`) + chalk.cyan(" available!"));
@@ -200,7 +214,7 @@ init = () => {
     term.gray("press any key to remove");
   }
 
-  term.moveTo(1, term.height);
+  term.moveTo(term.width, term.height);
   term.grabInput({ mouse: "button" });
 
   term.on("key", function(name, matches, data) {
