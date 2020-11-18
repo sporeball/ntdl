@@ -104,6 +104,7 @@ const commands = {
   "X": async () => {
     let c = tasks.filter(task => task[1] == false);
     let removed = tasks.length - c.length;
+    if (removed == 0) return;
 
     tasks = c;
     completed = 0;
