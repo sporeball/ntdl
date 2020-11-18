@@ -71,7 +71,9 @@ const commands = {
       }
       term.moveTo(2, tasks.length + 2);
       if (tasks.length == 0) term.eraseLine();
-      term("- %s ", input);
+      cy = tasks.length + 2;
+      cursor();
+      term(" %s ", input);
       tasks.push([input, false]);
       setTasks();
       statusline();
