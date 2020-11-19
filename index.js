@@ -128,7 +128,7 @@ const commands = {
   },
   // terminate
   "CTRL_C": () => {
-    term.fullscreen(false);
+    console.log("\u001B[?1049l");
   	term.grabInput(false);
   	setTimeout(function() {
       process.exit()
@@ -192,7 +192,8 @@ setTasks = () => {
 }
 
 init = () => {
-  term.fullscreen(true);
+  console.log("\u001B[?1049h")
+  term.moveTo(1, 1);
   term.bold.cyan("ntdl\n");
 
   completed = tasks.filter(i => i[1] == true).length;
