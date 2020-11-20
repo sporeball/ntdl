@@ -56,7 +56,17 @@ const commands = {
     output("> ");
     term.moveTo(3, term.height);
 
-    term.inputField({ style: term.green }, function(error, input) {
+    term.inputField({
+      style: term.green,
+      cancelable: true
+    }, function(error, input) {
+      if (input === undefined) {
+        output("");
+        if (cy) cursor();
+        term.moveTo(term.width, term.height);
+        busy = false;
+        return;
+      }
       if (input == "") {
         output(chalk.red("task name cannot be empty"));
         busy = false;
