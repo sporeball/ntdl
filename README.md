@@ -13,7 +13,8 @@ $ npm i -g ntdl
 just run `ntdl`.
 
 #### commands
-- `a` - add a task to the list.
+- `a` - add a new task to the list.
+- `e` - rename an existing task.
 - `x` - mark a task as completed.
 - `X` - clear all completed tasks.
 

@@ -33,6 +33,7 @@ if (args.includes("--help")) {
 
     commands
       a     add task
+      e     edit task
       x     complete task
       X     clear completed tasks
 
@@ -90,6 +91,44 @@ const commands = {
       output("added task '" + chalk.green(input) + "'");
       if (tasks.length == 1) cy = 2;
       cursor();
+      term.moveTo(term.width, term.height);
+      busy = false;
+    });
+  },
+  // rename task
+  "e": async () => {
+    if (!cy) return;
+    if (tasks[cy - 2][1] == true) return;
+    busy = true;
+
+    output("");
+
+    term.moveTo(4, cy);
+    term.inputField({
+      style: term.green,
+      default: tasks[cy - 2][0],
+      cancelable: true
+    }, function(error, input) {
+      if (input === undefined) {
+        term.eraseLine();
+        cursor();
+        term.moveTo(4, cy);
+        term(tasks[cy - 2][0]);
+        term.moveTo(term.width, term.height);
+        busy = false;
+        return;
+      }
+      if (input == "") {
+        term(tasks[cy - 2][0])
+        output(chalk.red("task name cannot be empty"));
+        busy = false;
+        return;
+      }
+      term.moveTo(4, cy);
+      term(input);
+      output(`renamed '${chalk.green(tasks[cy - 2][0])}'`);
+      tasks[cy - 2][0] = input;
+      setTasks();
       term.moveTo(term.width, term.height);
       busy = false;
     });
