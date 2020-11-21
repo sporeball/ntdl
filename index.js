@@ -54,43 +54,44 @@ const commands = {
       (tasks[cy - 2][1] == true) ? term.gray("-") : term("-");
     }
 
-    output("> ");
-    term.moveTo(3, term.height);
+    term.moveTo(2, tasks.length + 2);
+    if (tasks.length == 0) term.eraseLine();
+    term("> ");
 
     term.inputField({
       style: term.green,
       cancelable: true
     }, function(error, input) {
       if (input === undefined) {
-        output("");
+        term.eraseLine();
         if (cy) cursor();
         term.moveTo(term.width, term.height);
         busy = false;
         return;
       }
       if (input == "") {
+        term.eraseLine();
+        if (cy) cursor();
         output(chalk.red("task name cannot be empty"));
         busy = false;
         return;
       }
       for (i in tasks) {
         if (tasks[i][0] == input) {
+          term.eraseLine();
+          if (cy) cursor();
           output(chalk.red("task already exists with this name"));
           busy = false;
           return;
         }
       }
       term.moveTo(2, tasks.length + 2);
-      if (tasks.length == 0) term.eraseLine();
       cy = tasks.length + 2;
-      cursor();
-      term(" %s ", input);
+      term(`> ${input}`);
       tasks.push([input, false]);
       setTasks();
       statusline();
       output("added task '" + chalk.green(input) + "'");
-      if (tasks.length == 1) cy = 2;
-      cursor();
       term.moveTo(term.width, term.height);
       busy = false;
     });
