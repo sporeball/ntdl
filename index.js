@@ -120,10 +120,21 @@ const commands = {
         return;
       }
       if (input == "") {
-        term(tasks[cy - 2][0])
+        term(tasks[cy - 2][0]);
         output(chalk.red("task name cannot be empty"));
         busy = false;
         return;
+      }
+      for (i in tasks) {
+        if (tasks[i][0] == input) {
+          term.eraseLine();
+          term.moveTo(4, cy);
+          term(tasks[cy - 2][0]);
+          cursor();
+          output(chalk.red("task already exists with this name"));
+          busy = false;
+          return;
+        }
       }
       term.moveTo(4, cy);
       term(input);
