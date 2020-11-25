@@ -44,19 +44,28 @@ if (args.includes("--help")) {
 }
 const DEV = args.includes("-d");
 
+var tasks = config.get(`${DEV ? "devT" : "t"}asks`) || [];
+var completed = tasks.filter(i => i[1]).length;
+
+var cy; // cursor y-position
+
+var busy = false; // are we in the middle of a command?
+
 const commands = {
   // add task
   "a": async () => {
     busy = true;
 
+    output("");
+
     if (cy) {
       term.moveTo(2, cy);
-      (tasks[cy - 2][1] == true) ? term.gray("-") : term("-");
+      tasks[cy - 2][1] ? term.gray("-") : term("-");
     }
 
     term.moveTo(2, tasks.length + 2);
-    if (tasks.length == 0) term.eraseLine();
     term("> ");
+    term.eraseLineAfter();
 
     term.inputField({
       style: term.green,
@@ -64,42 +73,44 @@ const commands = {
     }, function(error, input) {
       if (input === undefined) {
         term.eraseLine();
-        if (cy) cursor();
+        if (tasks.length == 0) {
+          term.moveTo(2, 2);
+          term.gray("no tasks yet...");
+        }
+        cursor();
         term.moveTo(term.width, term.height);
         busy = false;
         return;
       }
       if (input == "") {
         term.eraseLine();
-        if (cy) cursor();
-        output(chalk.red("task name cannot be empty"));
-        busy = false;
+        cursor();
+        err("task name cannot be empty");
         return;
       }
       for (i in tasks) {
         if (tasks[i][0] == input) {
           term.eraseLine();
-          if (cy) cursor();
-          output(chalk.red("task already exists with this name"));
-          busy = false;
+          cursor();
+          err("task already exists with this name");
           return;
         }
       }
-      term.moveTo(2, tasks.length + 2);
       cy = tasks.length + 2;
-      term(`> ${input}`);
+      term.moveTo(4, cy);
+      term(input);
       tasks.push([input, false]);
       setTasks();
       statusline();
-      output("added task '" + chalk.green(input) + "'");
+      output(`added task '${chalk.green(input)}'`);
       term.moveTo(term.width, term.height);
       busy = false;
     });
   },
-  // rename task
+  // edit task
   "e": async () => {
     if (!cy) return;
-    if (tasks[cy - 2][1] == true) return;
+    if (tasks[cy - 2][1]) return;
     busy = true;
 
     output("");
@@ -113,7 +124,6 @@ const commands = {
       if (input === undefined) {
         term.eraseLine();
         cursor();
-        term.moveTo(4, cy);
         term(tasks[cy - 2][0]);
         term.moveTo(term.width, term.height);
         busy = false;
@@ -121,18 +131,15 @@ const commands = {
       }
       if (input == "") {
         term(tasks[cy - 2][0]);
-        output(chalk.red("task name cannot be empty"));
-        busy = false;
+        err("task name cannot be empty");
         return;
       }
       for (i in tasks) {
         if (tasks[i][0] == input) {
           term.eraseLine();
-          term.moveTo(4, cy);
-          term(tasks[cy - 2][0]);
           cursor();
-          output(chalk.red("task already exists with this name"));
-          busy = false;
+          term(tasks[cy - 2][0]);
+          err("task already exists with this name");
           return;
         }
       }
@@ -148,20 +155,20 @@ const commands = {
   // complete task
   "x": async () => {
     if (!cy) return;
-    if (tasks[cy - 2][1] == true) return;
+    if (tasks[cy - 2][1]) return;
     tasks[cy - 2][1] = true;
     completed++;
     setTasks();
-    term.moveTo(3, cy);
-    term(chalk.gray(` ${tasks[cy - 2][0]} `) + symbols.success);
+    term.moveTo(4, cy);
+    term(chalk.gray(`${tasks[cy - 2][0]} `) + symbols.success);
     statusline();
     if (completed == tasks.length) {
       output(chalk.green("all tasks completed!"));
     } else {
-      output("completed '" + chalk.green(tasks[cy - 2][0]) + "'");
+      output(`completed '${chalk.green(tasks[cy - 2][0])}'`);
     }
   },
-  // remove completed tasks
+  // clear completed tasks
   "X": async () => {
     let c = tasks.filter(task => task[1] == false);
     let removed = tasks.length - c.length;
@@ -197,50 +204,41 @@ const commands = {
   }
 };
 
-var tasks = (DEV) ? config.get("devTasks") || [] : config.get("tasks") || [];
-
-var completed = 0;
-
-var cy; // cursor y-position
-
-var busy = false; // are we in the middle of a command?
+// utils
+cursor = () => {
+  if (cy) {
+    term.moveTo(2, cy);
+    term("> ");
+  }
+}
 
 moveCursor = dir => {
   cy += dir;
   term.moveTo(2, cy - dir);
-  (tasks[cy - 2 - dir][1] == true) ? term.gray("-") : term("-");
+  tasks[cy - 2 - dir][1] ? term.gray("-") : term("-");
   cursor();
 }
 
-cursor = () => {
-  term.moveTo(2, cy);
-  term(">");
-}
-
-// write full list of tasks
 writeList = () => {
+  term.moveTo(2, 2);
   if (tasks.length == 0) {
-    term.moveTo(2, 2);
     term.gray("no tasks yet...");
     return;
   }
   for (let i = 0; i < tasks.length; i++) {
-    term.moveTo(2, i + 2);
-    if (tasks[i][1] == true) {
-      term(chalk.gray(`- ${tasks[i][0]} `) + symbols.success);
+    if (tasks[i][1]) {
+      term(chalk.gray(`- ${tasks[i][0]} ${symbols.success}\n `));
     } else {
-      term("- %s ", tasks[i][0]);
+      term(`- ${tasks[i][0]}\n `);
     }
   }
 }
 
-// update statusline (colored line)
 statusline = () => {
   term.moveTo(1, term.height - 1);
   term.bgWhite.black(`${tasks.length} task${tasks.length != 1 ? "s" : ""} (${completed} completed)`.padEnd(term.width, " "));
 }
 
-// write output (last line)
 output = str => {
   term.moveTo(1, term.height);
   term.eraseLine();
@@ -248,8 +246,13 @@ output = str => {
   term.moveTo(term.width, term.height);
 }
 
+err = str => {
+  output(chalk.red(str));
+  if (busy) busy = false;
+}
+
 setTasks = () => {
-  (DEV) ? config.set("devTasks", tasks) : config.set("tasks", tasks);
+  config.set(`${DEV ? "devT" : "t"}asks`, tasks);
 }
 
 init = () => {
@@ -257,7 +260,6 @@ init = () => {
   term.moveTo(1, 1);
   term.bold.cyan("ntdl\n");
 
-  completed = tasks.filter(i => i[1] == true).length;
   if (completed == tasks.length && completed != 0) {
     output(chalk.green("all tasks completed!"));
   }
