@@ -96,12 +96,11 @@ const commands = {
           return;
         }
       }
-      cy = tasks.length + 2;
-      term.moveTo(4, cy);
-      term(input);
       tasks.push([input, false]);
       setTasks();
-      statusline();
+      cy = tasks.length + 1;
+      term.moveTo(4, cy);
+      term(input);
       output(`added task '${chalk.green(input)}'`);
       term.moveTo(term.width, term.height);
       busy = false;
@@ -143,11 +142,11 @@ const commands = {
           return;
         }
       }
+      tasks[cy - 2][0] = input;
+      setTasks();
       term.moveTo(4, cy);
       term(input);
       output(`renamed '${chalk.green(tasks[cy - 2][0])}'`);
-      tasks[cy - 2][0] = input;
-      setTasks();
       term.moveTo(term.width, term.height);
       busy = false;
     });
@@ -157,11 +156,9 @@ const commands = {
     if (!cy) return;
     if (tasks[cy - 2][1]) return;
     tasks[cy - 2][1] = true;
-    completed++;
     setTasks();
     term.moveTo(4, cy);
     term(chalk.gray(`${tasks[cy - 2][0]} `) + symbols.success);
-    statusline();
     if (completed == tasks.length) {
       output(chalk.green("all tasks completed!"));
     } else {
@@ -175,11 +172,9 @@ const commands = {
     if (removed == 0) return;
 
     tasks = c;
-    completed = 0;
     setTasks();
-    term.eraseArea(1, 2, term.width, term.height);
+    term.eraseArea(1, 2, term.width, term.height - 3);
     writeList();
-    statusline();
     output(`removed ${removed} task${removed != 1 ? "s" : ""}`);
     if (tasks.length != 0) {
       cy = 2;
@@ -253,6 +248,8 @@ err = str => {
 
 setTasks = () => {
   config.set(`${DEV ? "devT" : "t"}asks`, tasks);
+  completed = tasks.filter(i => i[1]).length;
+  statusline();
 }
 
 init = () => {
